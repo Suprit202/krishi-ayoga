@@ -20,6 +20,7 @@ app.get(`/api/test`, (req,res) => {
 })
 
 app.use('/api/auth',require('./routes/auth.js'));
+app.use('/api/farms', require('./routes/farms'));
 app.use('/api/treatments', require('./routes/treatments'));
 app.use('/api/livestock', require('./routes/livestock'));
 

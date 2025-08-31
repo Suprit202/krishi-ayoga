@@ -1,9 +1,9 @@
-// backend/routes/treatments.js
 const express = require('express');
 const { protect } = require('../middleware/auth');
 const Treatment = require('../models/Treatment');
 const LivestockGroup = require('../models/LivestockGroup');
 const Drug = require('../models/Drug'); // Import Drug model
+const Farm = require('../models/Farm');
 const crypto = require('crypto');
 
 const router = express.Router();
@@ -121,6 +121,36 @@ router.get('/check-sale/:groupId', protect, async (req, res) => {
       canSell: isReadyForSale,
       warnings,
       checkDate: currentDate.toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @desc    Get treatments by farm
+// @route   GET /api/treatments/farm/:farmId
+// @access  Private
+router.get('/farm/:farmId', protect, async (req, res) => {
+  try {
+    const { farmId } = req.params;
+    
+    // First get all livestock groups for this farm
+    const groups = await LivestockGroup.find({ farmId });
+    const groupIds = groups.map(group => group._id);
+    
+    // Then get treatments for these groups
+    const treatments = await Treatment.find({ 
+      livestockGroupId: { $in: groupIds } 
+    })
+    .populate('livestockGroupId', 'name species')
+    .populate('drugId', 'name withdrawalPeriod')
+    .populate('administeredBy', 'name')
+    .sort({ dateAdministered: -1 });
+
+    res.json({
+      farm: await Farm.findById(farmId).select('name location'),
+      treatmentCount: treatments.length,
+      treatments
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
