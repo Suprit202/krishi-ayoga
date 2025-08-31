@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node server.js",
     "api": "nodemon server.js",
+    "seedDrugs": "node scripts/seedDrugs.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
