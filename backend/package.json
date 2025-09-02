@@ -7,6 +7,7 @@
     "api": "nodemon server.js",
     "seedFarms": "node scripts/seedFarms.js",
     "seedDrugs": "node scripts/seedDrugs.js",
+    "demoData": "node scripts/createDemoData.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

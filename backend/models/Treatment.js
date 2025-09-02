@@ -23,6 +23,19 @@ const TreatmentSchema = new mongoose.Schema({
     type: String,
     maxlength: [500, 'Notes cannot be more than 500 characters']
   },
+  aiAnalysis: {
+    anomalies: [{
+      type: { type: String },
+      severity: { type: String },
+      message: { type: String }
+    }],
+    warnings: [{
+      type: { type: String },
+      severity: { type: String },
+      message: { type: String }
+    }],
+    confidence: { type: Number }
+  },
   // REMOVE required: true from these fields
   withdrawalEndDate: { type: Date },
   dataHash: { type: String },

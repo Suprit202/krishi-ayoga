@@ -1,10 +1,13 @@
+// backend/routes/treatments.js
 const express = require('express');
+const crypto = require('crypto');
 const { protect } = require('../middleware/auth');
 const Treatment = require('../models/Treatment');
 const LivestockGroup = require('../models/LivestockGroup');
-const Drug = require('../models/Drug'); // Import Drug model
+const Drug = require('../models/Drug');
 const Farm = require('../models/Farm');
-const crypto = require('crypto');
+const { anomalyDetector } = require('../ai-services');
+const { outbreakPredictor } = require('../ai-services');
 
 const router = express.Router();
 
@@ -32,27 +35,25 @@ router.post('/', protect, async (req, res) => {
   try {
     const { livestockGroupId, drugId, dosage, dateAdministered, notes } = req.body;
 
-    // Get the drug and group data first
     const drug = await Drug.findById(drugId);
     const group = await LivestockGroup.findById(livestockGroupId);
 
-    if (!drug) {
-      return res.status(404).json({ message: 'Drug not found' });
-    }
-    if (!group) {
-      return res.status(404).json({ message: 'Livestock group not found' });
-    }
+    if (!drug) return res.status(404).json({ message: 'Drug not found' });
+    if (!group) return res.status(404).json({ message: 'Livestock group not found' });
 
-    // Calculate withdrawal date
     const adminDate = dateAdministered ? new Date(dateAdministered) : new Date();
     const withdrawalEnd = new Date(adminDate);
     withdrawalEnd.setDate(withdrawalEnd.getDate() + drug.withdrawalPeriod);
 
-    // Generate hash
     const dataString = `${livestockGroupId}${drugId}${adminDate}${dosage}${Date.now()}`;
     const dataHash = crypto.createHash('sha256').update(dataString).digest('hex');
 
-    // Create treatment with all required fields
+    const aiAnalysis = await anomalyDetector.detectAnomalies(
+      { drugId, dosage, livestockGroupId, dateAdministered: adminDate },
+      drug,
+      group
+    );
+
     const treatment = await Treatment.create({
       livestockGroupId,
       drugId,
@@ -61,13 +62,13 @@ router.post('/', protect, async (req, res) => {
       notes,
       administeredBy: req.user._id,
       withdrawalEndDate: withdrawalEnd,
-      dataHash: dataHash,
+      dataHash,
       drugName: drug.name,
       groupName: group.name,
-      species: group.species
+      species: group.species,
+      aiAnalysis
     });
 
-    // Update livestock group status
     await LivestockGroup.findByIdAndUpdate(
       livestockGroupId,
       { 
@@ -82,7 +83,6 @@ router.post('/', protect, async (req, res) => {
       }
     );
 
-    // Populate for response
     const populatedTreatment = await Treatment.findById(treatment._id)
       .populate('livestockGroupId', 'name species')
       .populate('drugId', 'name withdrawalPeriod')
@@ -104,7 +104,6 @@ router.get('/check-sale/:groupId', protect, async (req, res) => {
     const { groupId } = req.params;
     const currentDate = new Date();
 
-    // Find active treatments for this group
     const activeTreatments = await Treatment.find({
       livestockGroupId: groupId,
       withdrawalEndDate: { $gt: currentDate }
@@ -134,11 +133,14 @@ router.get('/farm/:farmId', protect, async (req, res) => {
   try {
     const { farmId } = req.params;
     
-    // First get all livestock groups for this farm
+    // Check authorization
+    if (req.user.role !== 'admin' && req.user.farmId.toString() !== farmId) {
+      return res.status(403).json({ message: 'Not authorized to access this farm' });
+    }
+
     const groups = await LivestockGroup.find({ farmId });
     const groupIds = groups.map(group => group._id);
     
-    // Then get treatments for these groups
     const treatments = await Treatment.find({ 
       livestockGroupId: { $in: groupIds } 
     })
@@ -147,11 +149,55 @@ router.get('/farm/:farmId', protect, async (req, res) => {
     .populate('administeredBy', 'name')
     .sort({ dateAdministered: -1 });
 
+    const farm = await Farm.findById(farmId).select('name location farmType');
+
     res.json({
-      farm: await Farm.findById(farmId).select('name location'),
+      farm,
+      livestockGroupCount: groups.length,
       treatmentCount: treatments.length,
       treatments
     });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @desc    Get outbreak risk prediction for farm
+// @route   GET /api/treatments/farm/:farmId/outbreak-risk
+// @access  Private
+router.get('/farm/:farmId/outbreak-risk', protect, async (req, res) => {
+  try {
+    const { farmId } = req.params;
+    
+    // Authorization check
+    if (req.user.role !== 'admin' && req.user.farmId.toString() !== farmId) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const prediction = await outbreakPredictor.predictOutbreakRisk(farmId);
+    
+    res.json(prediction);
+  } catch (error) {
+    console.error('Outbreak prediction error:', error);
+    res.status(500).json({ message: 'Failed to generate prediction', error: error.message });
+  }
+});
+
+// @desc    Get specific treatment by ID
+// @route   GET /api/treatments/:id
+// @access  Private
+router.get('/:id', protect, async (req, res) => {
+  try {
+    const treatment = await Treatment.findById(req.params.id)
+      .populate('livestockGroupId', 'name species')
+      .populate('drugId', 'name withdrawalPeriod')
+      .populate('administeredBy', 'name');
+    
+    if (!treatment) {
+      return res.status(404).json({ message: 'Treatment not found' });
+    }
+    
+    res.json(treatment);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
