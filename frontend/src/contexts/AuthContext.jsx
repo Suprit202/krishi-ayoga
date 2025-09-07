@@ -1,6 +1,7 @@
 // src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import { useNotification } from './NotificationContext';
+import api, { getAuthHeader } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -15,62 +16,65 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
-      fetchUserProfile();
-    } else {
-      setLoading(false);
+    const email = localStorage.getItem('email');
+    
+    if (token && email) {
+      setUser({ email });
     }
+    setLoading(false);
   }, []);
 
-  const fetchUserProfile = async () => {
+  const login = async (formData) => {
     try {
-      const response = await api.get('/auth/me');
-      setUser(response.data);
+      setLoading(true);
+      const response = await api.post('/auth/login', formData);
+      const { token, email } = response.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('email', email);
+      setUser({ email });
+      
+      showNotification('Login successful! Welcome back.', 'success');
+      return { success: true };
     } catch (error) {
-      localStorage.removeItem('token');
+      const message = error.response?.data?.message || 'Login failed. Please try again.';
+      showNotification(message, 'error');
+      return { success: false, message };
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (email, password) => {
+  const register = async (formData) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const { token, ...userData } = response.data;
-      
-      localStorage.setItem('token', token);
-      setUser(userData);
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Login failed' 
-      };
-    }
-  };
+      setLoading(true);
+      const response = await api.post('/auth/register', formData);
+      const { token, email } = response.data;
 
-  const register = async (userData) => {
-    try {
-      const response = await api.post('/auth/register', userData);
-      const { token, ...user } = response.data;
-      
       localStorage.setItem('token', token);
-      setUser(user);
+      localStorage.setItem('email', email);
+      setUser({ email });
+      
+      showNotification('Registration successful! Please login to continue.', 'success');
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Registration failed' 
-      };
+      const message = error.response?.data?.message || 'Registration failed. Please try again.';
+      showNotification(message, 'error');
+      return { success: false, message };
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('email');
     setUser(null);
+    showNotification('You have been logged out.', 'info');
   };
 
   const value = {

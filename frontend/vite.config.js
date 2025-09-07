@@ -12,8 +12,5 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
-  },
-  css: {
-    postcss: './postcss.config.js',
-  },
+  }
 })

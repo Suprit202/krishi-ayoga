@@ -9,7 +9,7 @@ const Loader = ({ size = 'medium', className = '' }) => {
   };
   
   return (
-    <div className={`flex justify-center items-center min-h-screen ${className}`}>
+    <div className={`flex justify-center items-center ${className}`}>
       <div className={`${sizes[size]} border-4 border-primary-200 border-t-primary-500 rounded-full animate-spin`}></div>
     </div>
   );
