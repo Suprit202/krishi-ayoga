@@ -14,16 +14,24 @@ const Layout = () => {
   }
 
   if (!user) {
-    return null; // Or redirect handling will take care of this
+    return null;
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-          <Outlet />
+    <div className="flex flex-col h-screen bg-gray-100">
+      {/* Fixed Header */}
+      <Header />
+      
+      {/* Main content area */}
+      <div className="flex flex-1 overflow-hidden pt-16"> {/* Add pt-16 for header height */}
+        {/* Fixed Sidebar */}
+        <Sidebar />
+        
+        {/* Main content - pushed right by sidebar width and down by header height */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto md:ml-64">
+          <div className="p-6">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

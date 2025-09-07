@@ -7,8 +7,7 @@ import {
   BarChart3,
   LogOut,
   Users,
-  Building2,
-  Activity
+  Building2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -19,17 +18,17 @@ const Sidebar = () => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Treatments', href: '/treatments', icon: PlusCircle },
-    { name: 'Livestock', href: '/livestock', icon: Users }, // Changed from Cow to Users
-    { name: 'Farms', href: '/farms', icon: Building2 }, // Changed from Farm to Building2
+    { name: 'Livestock', href: '/livestock', icon: Users },
+    { name: 'Farms', href: '/farms', icon: Building2 },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
   ];
 
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="bg-white w-64 fixed top-16 left-0 bottom-0 border-r border-gray-200 hidden md:block">
-      <div className="p-4">
-        <div className="mb-8">
+    <div className="bg-white w-64 fixed top-16 left-0 bottom-0 border-r border-gray-200 hidden md:block z-40">
+      <div className="p-4 h-full flex flex-col">
+        <div className="flex-1">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Navigation</h2>
           <nav className="space-y-1">
             {navigation.map((item) => {
@@ -52,10 +51,10 @@ const Sidebar = () => {
           </nav>
         </div>
 
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-gray-200 pt-4 mt-auto">
           <div className="px-3 py-2">
             <p className="text-sm text-gray-600">Logged in as</p>
-            <p className="text-sm font-medium text-gray-800">{user?.name}</p>
+            <p className="text-sm font-medium text-gray-800">{user?.email}</p>
             <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
           </div>
           

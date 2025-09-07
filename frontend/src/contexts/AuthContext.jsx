@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNotification } from './NotificationContext';
-import api, { getAuthHeader } from '../services/api';
+import api from '../services/api';
 
 const AuthContext = createContext();
 

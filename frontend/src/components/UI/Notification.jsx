@@ -46,7 +46,7 @@ const Notification = () => {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-sm w-full">
+    <div className="fixed top-20 right-4 z-60 max-w-sm w-full">
       <div className={`${getStyles()} border rounded-lg shadow-lg p-4 flex items-start space-x-3 animate-slide-up`}>
         <div className="flex-shrink-0">
           {getIcon()}
