@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/database.js');
 
+
 // Load env vars
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use('/api/auth', require('./routes/auth.js'));
 app.use('/api/farms', require('./routes/farms'));
 app.use('/api/treatments', require('./routes/treatments'));
 app.use('/api/livestock', require('./routes/livestock'));
+app.use('/api/drugs', require('./routes/drugsRouts.js'));
 app.use(/\/api\/.*/, (req, res) => {
   res.status(404).json({ 
     message: 'API endpoint not found',
