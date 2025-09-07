@@ -105,18 +105,11 @@ const TreatmentForm = ({ onSuccess, onCancel }) => {
       <div className="card">
         {
           aiResult.aiAnalysis?.confidence ? (
-            aiResult.aiAnalysis.confidence > 0.75 ? (
+            aiResult.aiAnalysis.confidence > 0.9 ? (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <h3 className="text-lg font-semibold text-red-800 mb-2">AI Analysis Complete</h3>
                 <p className="text-red-700 font-semibold">
                   High Confidence: {(aiResult.aiAnalysis.confidence * 100).toFixed(1)}%
-                </p>
-              </div>
-            ) : aiResult.aiAnalysis.confidence > 0.5 ? (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <h3 className="text-lg font-semibold text-yellow-800 mb-2">AI Analysis Complete</h3>
-                <p className="text-yellow-700 font-medium">
-                  Moderate Confidence: {(aiResult.aiAnalysis.confidence * 100).toFixed(1)}%
                 </p>
               </div>
             ) : (
