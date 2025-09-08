@@ -1,6 +1,7 @@
 // src/pages/Treatments.jsx
 import React, { useState, useEffect } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
+import { useSearchParams } from 'react-router-dom'; // Add this import
 import api from '../services/api';
 import Loader from '../components/UI/Loader';
 import TreatmentForm from '../components/Treatments/TreatmentForm';
@@ -10,11 +11,20 @@ const Treatments = () => {
   const [treatments, setTreatments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState(''); // Add this state
   const { showNotification } = useNotification();
+  const [searchParams] = useSearchParams(); // Get query parameters
 
   useEffect(() => {
     fetchTreatments();
-  }, []);
+    
+    // Check for pre-selected group from query params
+    const groupId = searchParams.get('group');
+    if (groupId) {
+      setSelectedGroupId(groupId);
+      setShowForm(true); // Auto-open form if group is specified
+    }
+  }, [searchParams]);
 
   const fetchTreatments = async () => {
     try {
@@ -23,7 +33,7 @@ const Treatments = () => {
       setTreatments(response.data);
     } catch (error) {
       console.error('Error fetching treatments:', error);
-      if (error.response?.status !== 401) { // Don't show notification for auth errors (handled by interceptor)
+      if (error.response?.status !== 401) {
         showNotification('Failed to load treatments', 'error');
       }
     } finally {
@@ -34,7 +44,8 @@ const Treatments = () => {
   const handleNewTreatment = (newTreatment) => {
     setTreatments(prev => [newTreatment, ...prev]);
     setShowForm(false);
-    showNotification('Treatment analysis completed successfully!', 'success');
+    setSelectedGroupId(''); // Reset selected group
+    showNotification('Treatment created successfully!', 'success');
   };
 
   if (loading) {
@@ -48,21 +59,27 @@ const Treatments = () => {
           <h1 className="text-2xl font-bold text-gray-900">Disease Treatments</h1>
           <p className="text-gray-600">AI-powered livestock disease diagnosis and treatment</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="btn-primary flex items-center"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>New Diagnosis</span>
-        </button>
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="btn-primary flex items-center"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Diagnosis
+          </button>
+        )}
       </div>
 
       {showForm ? (
         <TreatmentForm 
           onSuccess={handleNewTreatment}
-          onCancel={() => setShowForm(false)}
+          onCancel={() => {
+            setShowForm(false);
+            setSelectedGroupId(''); // Reset on cancel
+          }}
+          preSelectedGroupId={selectedGroupId} // Pass the pre-selected group
         />
       ) : (
         <TreatmentList treatments={treatments} onRefresh={fetchTreatments} />

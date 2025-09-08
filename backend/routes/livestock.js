@@ -18,6 +18,24 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
+// @desc    Get single livestock group
+// @route   GET /api/livestock/:id
+// @access  Public
+router.get('/:id', async (req, res) => {
+  try {
+    const group = await LivestockGroup.findById(req.params.id).populate('currentTreatments');
+    
+    if (!group) {
+      return res.status(404).json({ message: 'Livestock group not found' });
+    }
+    
+    res.status(200).json(group);
+  } catch (error) {
+    console.error('Error fetching livestock group:', error);
+    res.status(500).json({ message: 'Server error while fetching livestock group' });
+  }
+});
+
 // @desc    Create new livestock group for user's farm
 // @route   POST /api/livestock
 // @access  Private

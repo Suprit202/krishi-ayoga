@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Notification from './components/UI/Notification';
+import LivestockGroupDetails from './pages/LivestockGroupDetails';
 import Layout from './components/Layout/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -77,6 +78,7 @@ function AppRoutes() {
         <Route path="livestock" element={<Livestock />} />
         <Route path="farms" element={<Farms />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="livestock/:id" element={<LivestockGroupDetails />} />
       </Route>
       
       {/* Fallback route */}

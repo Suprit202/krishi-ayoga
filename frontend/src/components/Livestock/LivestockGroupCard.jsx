@@ -1,7 +1,10 @@
 // src/components/Livestock/LivestockGroupCard.jsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const LivestockGroupCard = ({ group }) => {
+  const navigate = useNavigate();
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'healthy':
@@ -36,8 +39,12 @@ const LivestockGroupCard = ({ group }) => {
     }
   };
 
+  const handleViewDetails = () => {
+    navigate(`/livestock/${group._id}`);
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+    <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center space-x-3">
           <span className="text-2xl">{getSpeciesIcon(group.species)}</span>
@@ -64,10 +71,17 @@ const LivestockGroupCard = ({ group }) => {
         </div>
       </div>
 
+      {group.location && (
+        <div className="mb-3">
+          <p className="text-sm text-gray-600">Location</p>
+          <p className="text-sm font-medium text-gray-800">{group.location}</p>
+        </div>
+      )}
+
       {group.currentTreatments && group.currentTreatments.length > 0 && (
         <div className="mb-4">
           <h4 className="text-sm font-medium text-gray-700 mb-2">Current Treatments</h4>
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-32 overflow-y-auto">
             {group.currentTreatments.map((treatment, index) => (
               <div key={index} className="bg-yellow-50 p-2 rounded-lg">
                 <p className="text-sm text-yellow-800">
@@ -79,14 +93,12 @@ const LivestockGroupCard = ({ group }) => {
         </div>
       )}
 
-      <div className="flex space-x-2">
-        <button className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg text-sm transition-colors">
-          View Details
-        </button>
-        <button className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg text-sm transition-colors">
-          Add Treatment
-        </button>
-      </div>
+      <button 
+        onClick={handleViewDetails}
+        className="w-full bg-primary-500 hover:bg-primary-600 text-white py-2 px-4 rounded-lg text-sm transition-colors font-medium"
+      >
+        View Group Details
+      </button>
     </div>
   );
 };
