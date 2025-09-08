@@ -203,4 +203,52 @@ router.get('/:id', protect, async (req, res) => {
   }
 });
 
+// @desc    Analyze treatment with AI (preview only - no save)
+// @route   POST /api/treatments/analyze
+// @access  Private
+router.post('/analyze', protect, async (req, res) => {
+  try {
+    const { livestockGroupId, drugId, dosage, dateAdministered } = req.body;
+
+    const drug = await Drug.findById(drugId);
+    const group = await LivestockGroup.findById(livestockGroupId);
+
+    if (!drug) return res.status(404).json({ message: 'Drug not found' });
+    if (!group) return res.status(404).json({ message: 'Livestock group not found' });
+
+    const adminDate = dateAdministered ? new Date(dateAdministered) : new Date();
+
+    // Use your existing anomaly detector for analysis
+    const aiAnalysis = await anomalyDetector.detectAnomalies(
+      { drugId, dosage, livestockGroupId, dateAdministered: adminDate },
+      drug,
+      group
+    );
+
+    // Calculate withdrawal period for preview
+    const withdrawalEnd = new Date(adminDate);
+    withdrawalEnd.setDate(withdrawalEnd.getDate() + drug.withdrawalPeriod);
+
+    res.status(200).json({
+      analysis: aiAnalysis,
+      drug: {
+        name: drug.name,
+        withdrawalPeriod: drug.withdrawalPeriod
+      },
+      group: {
+        name: group.name,
+        species: group.species
+      },
+      dosage,
+      dateAdministered: adminDate,
+      withdrawalEndDate: withdrawalEnd,
+      preview: true // Indicate this is a preview, not saved data
+    });
+
+  } catch (error) {
+    console.error('Treatment analysis error:', error);
+    res.status(500).json({ message: 'Analysis failed', error: error.message });
+  }
+});
+
 module.exports = router;
