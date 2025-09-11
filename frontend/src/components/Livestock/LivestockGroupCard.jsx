@@ -44,7 +44,7 @@ const LivestockGroupCard = ({ group }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
+    <div className="bg-white flex flex-col justify-between rounded-lg shadow-md p-6 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center space-x-3">
           <span className="text-2xl">{getSpeciesIcon(group.species)}</span>
@@ -53,7 +53,7 @@ const LivestockGroupCard = ({ group }) => {
             <p className="text-sm text-gray-600 capitalize">{group.species}</p>
           </div>
         </div>
-        <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(group.status)}`}>
+        <span className={`px-3 py-1 mx-1 text-xs font-medium rounded-full whitespace-nowrap ${getStatusColor(group.status)}`}>
           {group.status.replace('_', ' ')}
         </span>
       </div>
@@ -70,13 +70,6 @@ const LivestockGroupCard = ({ group }) => {
           </p>
         </div>
       </div>
-
-      {group.location && (
-        <div className="mb-3">
-          <p className="text-sm text-gray-600">Location</p>
-          <p className="text-sm font-medium text-gray-800">{group.location}</p>
-        </div>
-      )}
 
       {group.currentTreatments && group.currentTreatments.length > 0 && (
         <div className="mb-4">
