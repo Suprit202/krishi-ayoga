@@ -144,7 +144,6 @@ const TreatmentList = ({ treatments, onRefresh }) => {
                   </div>
                 )}
               </div>
-              {/* ... rest of the code ... */}
             </div>
           </div>
         ))}
