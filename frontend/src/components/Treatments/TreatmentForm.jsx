@@ -121,13 +121,13 @@ const TreatmentForm = ({ onSuccess, onCancel, preSelectedGroupId }) => {
     return (
       <div className="card">
         <div className={`p-4 rounded-lg mb-6 ${
-          aiResult.analysis.anomalies.length > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
+          aiResult.analysis.anomalies.length > 0 || aiResult.analysis.warnings.length > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
         } border`}>
           <h3 className="text-lg font-semibold mb-2">
-            {aiResult.analysis.anomalies.length > 0 ? '⚠️ Issues Detected' : '✅ Analysis Complete'}
+            {aiResult.analysis.anomalies.length > 0 || aiResult.analysis.warnings.length > 0 ? '⚠️ Issues Detected' : '✅ Analysis Complete'}
           </h3>
           <p className={
-            aiResult.analysis.anomalies.length > 0 ? 'text-red-700' : 'text-green-700'
+            aiResult.analysis.anomalies.length > 0 || aiResult.analysis.warnings.length > 0 ? 'text-red-700' : 'text-green-700'
           }>
             Confidence: {((aiResult.analysis.confidence || 0) * 100).toFixed(1)}%
           </p>
@@ -146,13 +146,10 @@ const TreatmentForm = ({ onSuccess, onCancel, preSelectedGroupId }) => {
           </div>
           
           <div>
-            <h4 className="font-semibold mb-2">AI Diagnosis</h4>
-            <p className="text-gray-700">{aiResult.analysis.diagnosis || 'Standard treatment protocol'}</p>
-            
-            <div className="mt-4">
-              <h4 className="font-semibold mb-2">Recommended Plan</h4>
-              <p className="text-gray-700">{aiResult.analysis.treatmentPlan}</p>
-            </div>
+            <h4 className="font-semibold mb-2">Drug Description</h4>
+            <p className="text-gray-700">{aiResult.drug.description || 'Standard treatment protocol'}</p>
+            <h4 className="font-semibold my-2">Drug Price</h4>
+            <p className="text-gray-700">{aiResult.drug.price || 'Standard price system'} $</p>
           </div>
         </div>
 
@@ -178,7 +175,7 @@ const TreatmentForm = ({ onSuccess, onCancel, preSelectedGroupId }) => {
           <button 
             onClick={handleSaveTreatment} 
             className="btn-primary"
-            disabled={loading || aiResult.analysis.anomalies.length > 0}
+            disabled={loading || aiResult.analysis.anomalies.length > 0 || aiResult.analysis.warnings.length > 0}
           >
             {loading ? 'Saving...' : 'Confirm & Save Treatment'}
           </button>
@@ -191,7 +188,7 @@ const TreatmentForm = ({ onSuccess, onCancel, preSelectedGroupId }) => {
           </button>
           <button 
             onClick={onCancel} 
-            className="btn-secondary"
+            className="text-sm px-3 py-2 bg-red-600 rounded-md text-white hover:bg-red-700 transition-colors"
             disabled={loading}
           >
             Cancel

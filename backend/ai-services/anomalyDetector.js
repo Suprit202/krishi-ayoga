@@ -10,8 +10,10 @@ class AnomalyDetector {
     return {
       dosageRules: {
         'Oxytetracycline': { Cattle: 20, Poultry: 15, Swine: 15, Sheep: 18, Goat: 16, Fish: 10 },
-        'Penicillin G': { Cattle: 25, Poultry: 20, Swine: 22, Sheep: 24, Goat: 21, Fish: 8 },
-        'Ivermectin': { Cattle: 0.2, Poultry: 0.1, Swine: 0.3, Sheep: 0.25, Goat: 0.22, Fish: 0.05 }
+        'Penicillin G': { Cattle: 25, Poultry: 20, Swine: 22, Sheep: 24, Goat: 21 },
+        'Ivermectin': { Cattle: 0.2, Swine: 0.3, Sheep: 0.25, Goat: 0.22 },
+        'Flunixin Meglumine': { Cattle: 2.2, Swine: 2.0, Sheep: 1.8},
+        'Enrofloxacin': { Cattle: 5.0, Poultry: 3.5, Swine: 4.5 }
       },
       
       withdrawalRules: {
@@ -24,6 +26,7 @@ class AnomalyDetector {
       
       speciesCompatibility: {
         'Oxytetracycline': ['Cattle', 'Poultry', 'Swine', 'Sheep', 'Goat', 'Fish'],
+        'Penicillin G': ['Cattle', 'Poultry', 'Swine', 'Sheep', 'Goat'],
         'Ivermectin': ['Cattle', 'Swine', 'Sheep', 'Goat'],
         'Enrofloxacin': ['Poultry', 'Swine', 'Cattle'],
         'Flunixin Meglumine': ['Cattle', 'Swine', 'Sheep']
@@ -31,7 +34,7 @@ class AnomalyDetector {
     };
   }
 
-parseDosage(dosageString) {
+  parseDosage(dosageString) {
   try {
     // Extract numbers from string like "30 mg/kg" → "30"
     const numericPart = dosageString.match(/(\d+\.?\d*)/);
@@ -82,7 +85,7 @@ parseDosage(dosageString) {
     return { 
       anomalies, 
       warnings, 
-      confidence: anomalies.length > 0 ? 0.92 : 0.85 
+      confidence: (anomalies.length > 0 || warnings.length > 0) ? 0.92 : 0.85 
     };
   }
 

@@ -7,10 +7,16 @@ const DrugSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  price:{
+    type: Number,
+    required: true,
+    min: 0
+  },
   description: {
     type: String,
     maxlength: [500, 'Description cannot be more than 500 characters']
   },
+  manufacturera: String,
   defaultDosage: {
     type: String,
     required: [true, 'Please add a default dosage'],

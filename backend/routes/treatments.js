@@ -232,12 +232,21 @@ router.post('/analyze', protect, async (req, res) => {
     res.status(200).json({
       analysis: aiAnalysis,
       drug: {
+        _id: drug._id,
         name: drug.name,
-        withdrawalPeriod: drug.withdrawalPeriod
+        description: drug.description,
+        defaultDosage: drug.defaultDosage,
+        withdrawalPeriod: drug.withdrawalPeriod,
+        price: drug.price,
+        manufacturer: drug.manufacturer
       },
       group: {
+        _id: group._id,
         name: group.name,
-        species: group.species
+        species: group.species,
+        count: group.count,
+        status: group.status,
+        location: group.location
       },
       dosage,
       dateAdministered: adminDate,
