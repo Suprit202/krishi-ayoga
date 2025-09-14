@@ -188,54 +188,85 @@ router.get('/drug-usage', protect, async (req, res) => {
 // @desc    Get comprehensive farm dashboard data
 // @route   GET /api/reports/dashboard
 // @access  Private
+// routes/reports.js - Update dashboard endpoint
 router.get('/dashboard', protect, async (req, res) => {
   try {
-    const [treatments, livestock, drugUsage] = await Promise.all([
-      // Get treatment data
-      Treatment.aggregate([
-        {
-          $group: {
-            _id: null,
-            total: { $sum: 1 },
-            completed: {
-              $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
-            },
-            inProgress: {
-              $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] }
-            }
-          }
-        }
-      ]),
-      
-      // Get livestock data
-      LivestockGroup.aggregate([
-        {
-          $group: {
-            _id: null,
-            totalAnimals: { $sum: '$count' },
-            totalGroups: { $sum: 1 },
-            healthy: {
-              $sum: { $cond: [{ $eq: ['$status', 'healthy'] }, 1, 0] }
-            },
-            underTreatment: {
-              $sum: { $cond: [{ $eq: ['$status', 'under_treatment'] }, 1, 0] }
-            }
-          }
-        }
-      ]),
-      
-      // Get recent treatments for timeline
-      Treatment.find()
-        .populate('livestockGroupId', 'name species')
+    const now = new Date();
+    const startOfToday = new Date(now.setHours(0, 0, 0, 0));
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    const endOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 6));
+
+    // Today's treatments
+    const todayTreatments = await Treatment.countDocuments({
+      dateAdministered: { $gte: startOfToday }
+    });
+
+    // Active alerts (critical/warning)
+    const activeAlerts = await Treatment.countDocuments({
+      withdrawalEndDate: { 
+        $lte: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000) // Next 2 days
+      }
+    });
+
+    // Compliance rate (treatments with proper withdrawal)
+    const totalTreatments = await Treatment.countDocuments();
+    const compliantTreatments = await Treatment.countDocuments({
+      withdrawalEndDate: { $exists: true }
+    });
+    const complianceRate = totalTreatments > 0 
+      ? Math.round((compliantTreatments / totalTreatments) * 100)
+      : 100;
+
+    // Upcoming treatments this week
+    const upcomingTreatments = await Treatment.countDocuments({
+      dateAdministered: { 
+        $gte: startOfWeek,
+        $lte: endOfWeek
+      }
+    });
+
+    // Compare with previous week for trends
+    const previousWeekStart = new Date(startOfWeek);
+    previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+    const previousWeekEnd = new Date(endOfWeek);
+    previousWeekEnd.setDate(previousWeekEnd.getDate() - 7);
+
+    const previousWeekTreatments = await Treatment.countDocuments({
+      dateAdministered: { 
+        $gte: previousWeekStart,
+        $lte: previousWeekEnd
+      }
+    });
+
+    const forecastTrend = previousWeekTreatments > 0 
+      ? Math.round(((upcomingTreatments - previousWeekTreatments) / previousWeekTreatments) * 100)
+      : 0;
+
+    res.json({
+      todayTreatments,
+      activeAlerts,
+      complianceRate,
+      upcomingTreatments,
+      forecastTrend,
+      // Include minimal existing data for charts
+      treatments: {
+        total: totalTreatments,
+        completed: await Treatment.countDocuments({ status: 'completed' }),
+        inProgress: await Treatment.countDocuments({ status: 'in_progress' })
+      },
+      livestock: {
+        totalAnimals: await LivestockGroup.aggregate([
+          { $group: { _id: null, total: { $sum: '$count' } } }
+        ]).then(result => result[0]?.total || 0),
+        totalGroups: await LivestockGroup.countDocuments(),
+        healthy: await LivestockGroup.countDocuments({ status: 'healthy' }),
+        underTreatment: await LivestockGroup.countDocuments({ status: 'under_treatment' })
+      },
+      recentTreatments: await Treatment.find()
+        .populate('livestockGroupId', 'name')
         .populate('drugId', 'name')
         .sort({ dateAdministered: -1 })
         .limit(5)
-    ]);
-
-    res.json({
-      treatments: treatments[0] || { total: 0, completed: 0, inProgress: 0 },
-      livestock: livestock[0] || { totalAnimals: 0, totalGroups: 0, healthy: 0, underTreatment: 0 },
-      recentTreatments: drugUsage
     });
 
   } catch (error) {

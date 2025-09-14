@@ -19,8 +19,8 @@ const Sidebar = () => {
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Treatments', href: '/treatments', icon: PlusCircle },
     { name: 'Livestock', href: '/livestock', icon: Users },
-    { name: 'Farms', href: '/farms', icon: Building2 },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
+    { name: 'Farms', href: '/farms', icon: Building2 },
   ];
 
   const isActive = (path) => location.pathname === path;

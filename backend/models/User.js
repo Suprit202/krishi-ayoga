@@ -23,6 +23,7 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false // Don't return password in queries by default
   },
+  
   role: {
     type: String,
     enum: ['farmer', 'veterinarian', 'admin'],
@@ -32,11 +33,53 @@ const UserSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Farm'
   },
+  farm: {
+    name: {
+      type: String,
+      trim: true
+    },
+    type: {
+      type: String,
+      enum: ['dairy', 'poultry', 'swine', 'aquaculture', 'mixed'],
+      default: 'mixed'
+    },
+    location: {
+      address: String,
+      city: String,
+      state: String,
+      country: String,
+      pincode: String
+    },
+    contact: {
+      phone: String,
+      alternatePhone: String,
+      email: String
+    },
+    size: {
+      type: Number, // in acres/hectares
+      min: 0
+    },
+    establishedYear: Number,
+    registrationId: String,
+    description: String
+  },
+  profile: {
+    phone: String,
+    address: String,
+    photo: String,
+    experience: { // in years
+      type: Number,
+      min: 0
+    },
+    qualifications: [String],
+    specialization: [String]
+  },
   isActive: {
     type: Boolean,
     default: true
-  }
-}, {
+  },
+  lastLogin: Date
+ }, {
   timestamps: true
 });
 
