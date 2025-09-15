@@ -50,6 +50,15 @@ const FarmSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+    owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  authorizedUsers: [{
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    role: { type: String, enum: ['manager', 'worker', 'viewer'] }
+  }],
   isActive: {
     type: Boolean,
     default: true

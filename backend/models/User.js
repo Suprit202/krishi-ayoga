@@ -33,6 +33,10 @@ const UserSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Farm'
   },
+  ownedFarms: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Farm'
+  }],
   farm: {
     name: {
       type: String,

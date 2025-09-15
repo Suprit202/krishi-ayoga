@@ -8,10 +8,20 @@ const router = express.Router();
 // @desc    Get all livestock groups for user's farm
 // @route   GET /api/livestock
 // @access  Private
+// routes/livestock.js
 router.get('/', protect, async (req, res) => {
   try {
-    // Only get groups for the user's farm
-    const groups = await LivestockGroup.find({ farmId: req.user.farmId }).sort({ createdAt: -1 });
+    let filter = {};
+    
+    if (req.user.role === 'farmer') {
+      // Farmers can only see their own livestock groups
+      const userFarms = await Farm.find({ owner: req.user._id });
+      const farmIds = userFarms.map(farm => farm._id);
+      
+      filter = { farmId: { $in: farmIds } };
+    }
+
+    const groups = await LivestockGroup.find(filter);
     res.json(groups);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

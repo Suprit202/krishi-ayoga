@@ -5,6 +5,35 @@ const { protect } = require('../middleware/auth');
 const Treatment = require('../models/Treatment');
 const LivestockGroup = require('../models/LivestockGroup');
 const Drug = require('../models/Drug');
+const Farm = require('../models/Farm');
+
+// Helper function to get user's accessible farm IDs
+const getUserFarmIds = async (userId, userRole) => {
+  if (userRole === 'admin') {
+    // Admin can access all farms
+    const allFarms = await Farm.find({}, '_id');
+    return allFarms.map(farm => farm._id);
+  } else {
+    // Farmers can only access their own farms
+    const userFarms = await Farm.find({ owner: userId });
+    return userFarms.map(farm => farm._id);
+  }
+};
+
+// Helper function to get filter for user's data
+const getUserDataFilter = async (userId, userRole) => {
+  let filter = {};
+  
+  if (userRole !== 'admin') {
+    const userFarmIds = await getUserFarmIds(userId, userRole);
+    const livestockGroups = await LivestockGroup.find({ farmId: { $in: userFarmIds } });
+    const groupIds = livestockGroups.map(group => group._id);
+    
+    filter = { livestockGroupId: { $in: groupIds } };
+  }
+  
+  return filter;
+};
 
 // @desc    Get treatment statistics
 // @route   GET /api/reports/treatments
@@ -26,10 +55,13 @@ router.get('/treatments', protect, async (req, res) => {
         startDate.setDate(startDate.getDate() - 30);
     }
 
+    // Get user-specific filter
+    const userFilter = await getUserDataFilter(req.user._id, req.user.role);
+    const dateFilter = { dateAdministered: { $gte: startDate } };
+    const filter = { ...userFilter, ...dateFilter };
+
     // Get treatment statistics
-    const treatments = await Treatment.find({
-      dateAdministered: { $gte: startDate }
-    });
+    const treatments = await Treatment.find(filter);
 
     // Group by month for chart data
     const monthlyData = Array(12).fill(0);
@@ -38,26 +70,18 @@ router.get('/treatments', protect, async (req, res) => {
       monthlyData[month] += 1;
     });
 
-    // Count by status
+    // Count by status (if your Treatment model has status field)
     const statusCount = {
-      completed: await Treatment.countDocuments({ 
-        dateAdministered: { $gte: startDate },
-        status: 'completed'
-      }),
-      in_progress: await Treatment.countDocuments({ 
-        dateAdministered: { $gte: startDate },
-        status: 'in_progress'
-      }),
-      scheduled: await Treatment.countDocuments({ 
-        dateAdministered: { $gte: startDate },
-        status: 'scheduled'
-      })
+      completed: await Treatment.countDocuments({ ...filter, status: 'completed' }),
+      in_progress: await Treatment.countDocuments({ ...filter, status: 'in_progress' }),
+      scheduled: await Treatment.countDocuments({ ...filter, status: 'scheduled' })
     };
 
     res.json({
       total: treatments.length,
       byStatus: statusCount,
-      byMonth: monthlyData
+      byMonth: monthlyData,
+      period: range
     });
 
   } catch (error) {
@@ -71,13 +95,21 @@ router.get('/treatments', protect, async (req, res) => {
 // @access  Private
 router.get('/livestock', protect, async (req, res) => {
   try {
-    // Get all livestock groups
-    const groups = await LivestockGroup.find();
+    let filter = {};
+    
+    if (req.user.role !== 'admin') {
+      // Non-admin users only see their own livestock
+      const userFarmIds = await getUserFarmIds(req.user._id, req.user.role);
+      filter = { farmId: { $in: userFarmIds } };
+    }
+
+    // Get all livestock groups with filter
+    const groups = await LivestockGroup.find(filter);
 
     // Calculate totals and distributions
     let totalAnimals = 0;
     const bySpecies = {};
-    const healthStatus = { healthy: 0, under_treatment: 0};
+    const healthStatus = { healthy: 0, under_treatment: 0 };
 
     groups.forEach(group => {
       totalAnimals += group.count || 0;
@@ -104,8 +136,15 @@ router.get('/livestock', protect, async (req, res) => {
 
     res.json({
       totalAnimals,
+      totalGroups,
       bySpecies,
-      healthStatus: healthPercentages
+      healthStatus: healthPercentages,
+      groups: groups.map(group => ({
+        name: group.name,
+        species: group.species,
+        count: group.count,
+        status: group.status
+      }))
     });
 
   } catch (error) {
@@ -134,10 +173,13 @@ router.get('/drug-usage', protect, async (req, res) => {
         startDate.setDate(startDate.getDate() - 30);
     }
 
+    // Get user-specific filter
+    const userFilter = await getUserDataFilter(req.user._id, req.user.role);
+    const dateFilter = { dateAdministered: { $gte: startDate } };
+    const filter = { ...userFilter, ...dateFilter };
+
     // Get treatments in date range with drug information
-    const treatments = await Treatment.find({
-      dateAdministered: { $gte: startDate }
-    }).populate('drugId', 'name price');
+    const treatments = await Treatment.find(filter).populate('drugId', 'name price');
 
     // Calculate drug usage and costs
     const drugUsage = {};
@@ -149,13 +191,13 @@ router.get('/drug-usage', protect, async (req, res) => {
           drugUsage[drugName] = {
             usage: 0,
             cost: 0,
-            drugId: treatment.drugId
+            drugId: treatment.drugId._id
           };
         }
         
         drugUsage[drugName].usage += 1;
         
-        // Calculate cost (assuming simple pricing - adjust as needed)
+        // Calculate cost
         if (treatment.drugId.price) {
           drugUsage[drugName].cost += treatment.drugId.price;
         }
@@ -164,19 +206,20 @@ router.get('/drug-usage', protect, async (req, res) => {
 
     // Convert to array and sort by usage
     const topDrugs = Object.entries(drugUsage)
-      .map(([drug, data]) => ({
-        drug,
+      .map(([drugName, data]) => ({
+        drug: drugName,
         drugId: data.drugId,
         usage: data.usage,
         cost: data.cost
       }))
       .sort((a, b) => b.usage - a.usage)
-      .slice(0, 10); // Top 10 drugs
+      .slice(0, 10);
 
     res.json({
       topDrugs,
       totalTreatments: treatments.length,
-      period: range
+      period: range,
+      totalCost: topDrugs.reduce((sum, drug) => sum + drug.cost, 0)
     });
 
   } catch (error) {
@@ -188,85 +231,61 @@ router.get('/drug-usage', protect, async (req, res) => {
 // @desc    Get comprehensive farm dashboard data
 // @route   GET /api/reports/dashboard
 // @access  Private
-// routes/reports.js - Update dashboard endpoint
 router.get('/dashboard', protect, async (req, res) => {
   try {
-    const now = new Date();
-    const startOfToday = new Date(now.setHours(0, 0, 0, 0));
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-    const endOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 6));
+    let farmFilter = {};
+    
+    if (req.user.role !== 'admin') {
+      // Non-admin users only see data from their farms
+      const userFarmIds = await getUserFarmIds(req.user._id, req.user.role);
+      
+      // Get livestock groups for these farms
+      const livestockGroups = await LivestockGroup.find({ farmId: { $in: userFarmIds } });
+      const groupIds = livestockGroups.map(group => group._id);
+      
+      farmFilter = { livestockGroupId: { $in: groupIds } };
+    }
 
-    // Today's treatments
-    const todayTreatments = await Treatment.countDocuments({
-      dateAdministered: { $gte: startOfToday }
-    });
+    // Get treatments and livestock with filter
+    const treatments = await Treatment.find(farmFilter);
+    const livestockGroups = await LivestockGroup.find(
+      req.user.role !== 'admin' ? { farmId: { $in: await getUserFarmIds(req.user._id, req.user.role) } } : {}
+    );
 
-    // Active alerts (critical/warning)
-    const activeAlerts = await Treatment.countDocuments({
-      withdrawalEndDate: { 
-        $lte: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000) // Next 2 days
+    // Calculate statistics
+    const totalAnimals = livestockGroups.reduce((sum, group) => sum + (group.count || 0), 0);
+    
+    const healthStatus = { healthy: 0, under_treatment: 0 };
+    livestockGroups.forEach(group => {
+      if (group.status) {
+        healthStatus[group.status] = (healthStatus[group.status] || 0) + 1;
       }
     });
 
-    // Compliance rate (treatments with proper withdrawal)
-    const totalTreatments = await Treatment.countDocuments();
-    const compliantTreatments = await Treatment.countDocuments({
-      withdrawalEndDate: { $exists: true }
-    });
-    const complianceRate = totalTreatments > 0 
-      ? Math.round((compliantTreatments / totalTreatments) * 100)
-      : 100;
-
-    // Upcoming treatments this week
-    const upcomingTreatments = await Treatment.countDocuments({
-      dateAdministered: { 
-        $gte: startOfWeek,
-        $lte: endOfWeek
-      }
-    });
-
-    // Compare with previous week for trends
-    const previousWeekStart = new Date(startOfWeek);
-    previousWeekStart.setDate(previousWeekStart.getDate() - 7);
-    const previousWeekEnd = new Date(endOfWeek);
-    previousWeekEnd.setDate(previousWeekEnd.getDate() - 7);
-
-    const previousWeekTreatments = await Treatment.countDocuments({
-      dateAdministered: { 
-        $gte: previousWeekStart,
-        $lte: previousWeekEnd
-      }
-    });
-
-    const forecastTrend = previousWeekTreatments > 0 
-      ? Math.round(((upcomingTreatments - previousWeekTreatments) / previousWeekTreatments) * 100)
-      : 0;
+    // Recent treatments (last 5)
+    const recentTreatments = await Treatment.find(farmFilter)
+      .populate('livestockGroupId', 'name')
+      .populate('drugId', 'name')
+      .sort({ dateAdministered: -1 })
+      .limit(5);
 
     res.json({
-      todayTreatments,
-      activeAlerts,
-      complianceRate,
-      upcomingTreatments,
-      forecastTrend,
-      // Include minimal existing data for charts
       treatments: {
-        total: totalTreatments,
-        completed: await Treatment.countDocuments({ status: 'completed' }),
-        inProgress: await Treatment.countDocuments({ status: 'in_progress' })
+        total: treatments.length,
+        completed: treatments.filter(t => t.status === 'completed').length,
+        inProgress: treatments.filter(t => t.status === 'in_progress').length
       },
       livestock: {
-        totalAnimals: await LivestockGroup.aggregate([
-          { $group: { _id: null, total: { $sum: '$count' } } }
-        ]).then(result => result[0]?.total || 0),
-        totalGroups: await LivestockGroup.countDocuments(),
-        healthy: await LivestockGroup.countDocuments({ status: 'healthy' }),
-        underTreatment: await LivestockGroup.countDocuments({ status: 'under_treatment' })
+        totalAnimals,
+        totalGroups: livestockGroups.length,
+        healthy: healthStatus.healthy || 0,
+        underTreatment: healthStatus.under_treatment || 0
       },
-      recentTreatments: await Treatment.find()
-        .populate('livestockGroupId', 'name')
-        .populate('drugId', 'name')
-        .sort({ dateAdministered: -1 })
-        .limit(5)
+      recentTreatments: recentTreatments.map(t => ({
+        drugName: t.drugId?.name,
+        groupName: t.livestockGroupId?.name,
+        dateAdministered: t.dateAdministered
+      }))
     });
 
   } catch (error) {

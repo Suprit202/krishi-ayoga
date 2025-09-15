@@ -27,28 +27,84 @@ ChartJS.register(
   Legend
 );
 
-const Charts = ({ treatmentsData, livestockData }) => {
-  // Default data structure if no data is provided
-  const defaultTreatments = {
-    byMonth: Array(12).fill(0),
-    byStatus: { completed: 0, inProgress: 0, scheduled: 0 }
+const Charts = ({ dashboardData }) => {
+  // Extract data from dashboard response
+  const treatments = dashboardData?.treatments || [];
+  const livestockGroups = dashboardData?.livestock?.groups || [];
+  const livestockStats = dashboardData?.livestock || {};
+
+  // Calculate monthly treatment data
+  const calculateMonthlyTreatments = () => {
+    const monthlyData = Array(12).fill(0);
+    
+    treatments.forEach(treatment => {
+      if (treatment.dateAdministered) {
+        const month = new Date(treatment.dateAdministered).getMonth();
+        monthlyData[month] += 1;
+      }
+    });
+    
+    return monthlyData;
   };
 
-  const defaultLivestock = {
-    bySpecies: {},
-    healthStatus: { healthy: 0, under_treatment: 0 }
+  // Calculate species distribution
+  const calculateSpeciesDistribution = () => {
+    const bySpecies = {};
+    
+    livestockGroups.forEach(group => {
+      if (group.species) {
+        bySpecies[group.species] = (bySpecies[group.species] || 0) + (group.count || 0);
+      }
+    });
+    
+    return bySpecies;
   };
 
-  const treatments = treatmentsData || defaultTreatments;
-  const livestock = livestockData || defaultLivestock;
+  // Calculate health status
+  const calculateHealthStatus = () => {
+    const healthStatus = { healthy: 0, under_treatment: 0 };
+    
+    livestockGroups.forEach(group => {
+      if (group.status === 'healthy') {
+        healthStatus.healthy += 1;
+      } else if (group.status === 'under_treatment') {
+        healthStatus.under_treatment += 1;
+      }
+    });
+    
+    return healthStatus;
+  };
+
+  // Calculate treatment status
+  const calculateTreatmentStatus = () => {
+    const statusCount = { completed: 0, inProgress: 0, scheduled: 0 };
+    
+    treatments.forEach(treatment => {
+      if (treatment.status === 'completed') {
+        statusCount.completed += 1;
+      } else if (treatment.status === 'in_progress') {
+        statusCount.inProgress += 1;
+      } else if (treatment.status === 'scheduled') {
+        statusCount.scheduled += 1;
+      }
+    });
+    
+    return statusCount;
+  };
+
+  // Get calculated data
+  const monthlyTreatmentData = calculateMonthlyTreatments();
+  const speciesDistribution = calculateSpeciesDistribution();
+  const healthStatus = calculateHealthStatus();
+  const treatmentStatus = calculateTreatmentStatus();
 
   // Treatment Trends Chart (Monthly)
-  const monthlyTreatmentData = {
+  const monthlyChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
       {
         label: 'Treatments per Month',
-        data: treatments.byMonth || Array(12).fill(0),
+        data: monthlyTreatmentData,
         backgroundColor: 'rgba(79, 70, 229, 0.6)',
         borderColor: 'rgba(79, 70, 229, 1)',
         borderWidth: 1,
@@ -79,14 +135,14 @@ const Charts = ({ treatmentsData, livestockData }) => {
   };
 
   // Treatment Status Chart (Doughnut)
-  const statusData = {
+  const statusChartData = {
     labels: ['Completed', 'In Progress', 'Scheduled'],
     datasets: [
       {
         data: [
-          treatments.byStatus?.completed || 0,
-          treatments.byStatus?.inProgress || 0,
-          treatments.byStatus?.scheduled || 0,
+          treatmentStatus.completed,
+          treatmentStatus.inProgress,
+          treatmentStatus.scheduled,
         ],
         backgroundColor: [
           'rgba(34, 197, 94, 0.6)', // Green for completed
@@ -117,13 +173,13 @@ const Charts = ({ treatmentsData, livestockData }) => {
   };
 
   // Species Distribution Chart
-  const speciesLabels = Object.keys(livestock.bySpecies || {});
-  const speciesData = {
+  const speciesLabels = Object.keys(speciesDistribution);
+  const speciesChartData = {
     labels: speciesLabels,
     datasets: [
       {
         label: 'Number of Animals',
-        data: speciesLabels.map(species => livestock.bySpecies[species]),
+        data: speciesLabels.map(species => speciesDistribution[species]),
         backgroundColor: [
           'rgba(255, 99, 132, 0.6)',
           'rgba(54, 162, 235, 0.6)',
@@ -159,13 +215,13 @@ const Charts = ({ treatmentsData, livestockData }) => {
   };
 
   // Health Status Chart
-  const healthData = {
+  const healthChartData = {
     labels: ['Healthy', 'Under Treatment'],
     datasets: [
       {
         data: [
-          livestock.healthStatus?.healthy || 0,
-          livestock.healthStatus?.under_treatment || 0,
+          healthStatus.healthy,
+          healthStatus.under_treatment,
         ],
         backgroundColor: [
           'rgba(34, 197, 94, 0.6)',
@@ -193,6 +249,12 @@ const Charts = ({ treatmentsData, livestockData }) => {
     },
   };
 
+  // Calculate totals for summary
+  const totalTreatments = treatments.length;
+  const totalAnimals = livestockStats.totalAnimals || 0;
+  const totalSpecies = Object.keys(speciesDistribution).length;
+  const healthyGroups = healthStatus.healthy;
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h3 className="text-lg font-semibold mb-6">Farm Analytics Dashboard</h3>
@@ -200,24 +262,24 @@ const Charts = ({ treatmentsData, livestockData }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Monthly Treatment Trends */}
         <div className="bg-gray-50 p-4 rounded-lg">
-          <Bar data={monthlyTreatmentData} options={monthlyOptions} />
+          <Bar data={monthlyChartData} options={monthlyOptions} />
         </div>
 
         {/* Treatment Status Distribution */}
         <div className="bg-gray-50 p-4 rounded-lg">
-          <Doughnut data={statusData} options={statusOptions} />
+          <Doughnut data={statusChartData} options={statusOptions} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Species Distribution */}
         <div className="bg-gray-50 p-4 rounded-lg">
-          <Bar data={speciesData} options={speciesOptions} />
+          <Bar data={speciesChartData} options={speciesOptions} />
         </div>
 
         {/* Health Status Overview */}
         <div className="bg-gray-50 p-4 rounded-lg">
-          <Doughnut data={healthData} options={healthOptions} />
+          <Doughnut data={healthChartData} options={healthOptions} />
         </div>
       </div>
 
@@ -225,29 +287,42 @@ const Charts = ({ treatmentsData, livestockData }) => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
         <div className="text-center">
           <div className="text-2xl font-bold text-indigo-600">
-            {treatments.byMonth?.reduce((sum, num) => sum + num, 0) || 0}
+            {totalTreatments}
           </div>
           <div className="text-sm text-gray-600">Total Treatments</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-green-600">
-            {Object.values(livestock.bySpecies || {}).reduce((sum, num) => sum + num, 0) || 0}
+            {totalAnimals}
           </div>
           <div className="text-sm text-gray-600">Total Animals</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-blue-600">
-            {Object.keys(livestock.bySpecies || {}).length || 0}
+            {totalSpecies}
           </div>
           <div className="text-sm text-gray-600">Species Types</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-green-600">
-            {livestock.healthStatus?.healthy || 0}
+            {healthyGroups}
           </div>
           <div className="text-sm text-gray-600">Healthy Groups</div>
         </div>
       </div>
+
+      {/* Empty State */}
+      {totalTreatments === 0 && livestockGroups.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">📊</span>
+          </div>
+          <h4 className="text-lg font-medium text-gray-900 mb-2">No Data Available</h4>
+          <p className="text-gray-600">
+            Start adding livestock and treatments to see analytics here.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
