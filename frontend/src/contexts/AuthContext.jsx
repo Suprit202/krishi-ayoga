@@ -20,23 +20,43 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const email = localStorage.getItem('email');
+    const userData = JSON.parse(localStorage.getItem('userData') || 'null');
     
-    if (token && email) {
-      setUser({ email });
+    if (token && userData) {
+      setUser(userData);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
     setLoading(false);
   }, []);
+
+  // NEW: Enhanced role checking functions
+  const hasRole = (roles) => {
+    if (!user?.role) return false;
+    // If roles is a string, convert it to an array
+    const rolesArray = Array.isArray(roles) ? roles : [roles];
+    return rolesArray.includes(user.role);
+  };
+
+  // Convenience functions for common role checks
+  const isAdmin = () => hasRole('admin');
+  const isVeterinarian = () => hasRole('veterinarian');
+  const isAdminOrVeterinarian = () => hasRole(['admin', 'veterinarian']);
+  const isFarmer = () => hasRole('farmer');
+  const isUser = () => hasRole('user');
 
   const login = async (formData) => {
     try {
       setLoading(true);
       const response = await api.post('/auth/login', formData);
-      const { token, email } = response.data;
+      const { token, _id, name, email, role } = response.data;
+
+      const userData = { _id, name, email, role };
 
       localStorage.setItem('token', token);
-      localStorage.setItem('email', email);
-      setUser({ email });
+      localStorage.setItem('userData', JSON.stringify(userData));
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      setUser(userData);
       
       showNotification('Login successful! Welcome back.', 'success');
       return { success: true };
@@ -53,13 +73,17 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await api.post('/auth/register', formData);
-      const { token, email } = response.data;
+      const { token, _id, name, email, role } = response.data;
+
+      const userData = { _id, name, email, role };
 
       localStorage.setItem('token', token);
-      localStorage.setItem('email', email);
-      setUser({ email });
+      localStorage.setItem('userData', JSON.stringify(userData));
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      showNotification('Registration successful! Please login to continue.', 'success');
+      setUser(userData);
+      
+      showNotification('Registration successful! Welcome.', 'success');
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.message || 'Registration failed. Please try again.';
@@ -72,17 +96,25 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('email');
+    localStorage.removeItem('userData');
+    delete api.defaults.headers.common['Authorization'];
     setUser(null);
     showNotification('You have been logged out.', 'info');
   };
 
   const value = {
     user,
+    loading,
     login,
     register,
     logout,
-    loading
+    // NEW: Export all role checking functions
+    hasRole,
+    isAdmin,
+    isVeterinarian,
+    isAdminOrVeterinarian,
+    isFarmer,
+    isUser
   };
 
   return (

@@ -194,7 +194,7 @@ const handleSubmit = async (e) => {
             >
               <option value="farmer">Farmer</option>
               <option value="admin">Admin</option>
-              <option value="manager">Farm Manager</option>
+              <option value="veterinarian">veterinarian</option>
             </select>
             <p className="text-xs text-gray-500 mt-1">Select your role in the farm management system</p>
           </div>

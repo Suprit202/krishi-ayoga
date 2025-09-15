@@ -37,25 +37,44 @@ const checkFarmAccess = async (userId, userRole, farmId) => {
 // @access  Private
 router.get('/', protect, async (req, res) => {
   try {
-    let filter = {};
-    
-    if (req.user.role !== 'admin') {
-      // For non-admin users, only show treatments for their livestock
+    let treatments;
+
+    // ✅ CORRECTED: Use && instead of ||
+    if (req.user.role !== 'admin' && req.user.role !== 'veterinarian') {
+      // For regular users (farmers), only show their treatments
       const userFarmIds = await getUserFarmIds(req.user._id, req.user.role);
-      
       const livestockGroups = await LivestockGroup.find({ 
         farmId: { $in: userFarmIds } 
       });
       const groupIds = livestockGroups.map(group => group._id);
       
-      filter = { livestockGroupId: { $in: groupIds } };
-    }
+      treatments = await Treatment.find({ livestockGroupId: { $in: groupIds } })
+        .populate('livestockGroupId', 'name species count')
+        .populate('drugId', 'name withdrawalPeriod')
+        .populate('administeredBy', 'name')
+        .sort({ dateAdministered: -1 });
 
-    const treatments = await Treatment.find(filter)
-      .populate('livestockGroupId', 'name species count')
-      .populate('drugId', 'name withdrawalPeriod')
-      .populate('administeredBy', 'name')
-      .sort({ dateAdministered: -1 });
+    } else {
+      // For Admin AND Veterinarian: Get all treatments with farm details
+      treatments = await Treatment.find({})
+        .populate({
+          path: 'livestockGroupId',
+          select: 'name species count farmId',
+          populate: {
+            path: 'farmId',
+            select: 'name'
+          }
+        })
+        .populate('drugId', 'name withdrawalPeriod')
+        .populate('administeredBy', 'name')
+        .sort({ dateAdministered: -1 });
+
+      // Add farmDetails for easier frontend access
+      treatments = treatments.map(treatment => ({
+        ...treatment.toObject(),
+        farmDetails: treatment.livestockGroupId?.farmId
+      }));
+    }
 
     res.json(treatments);
   } catch (error) {

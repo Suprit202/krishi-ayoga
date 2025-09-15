@@ -4,7 +4,7 @@ import { useNotification } from '../../contexts/NotificationContext';
 import api from '../../services/api';
 import Loader from '../UI/Loader';
 
-const TreatmentList = ({ treatments, onRefresh }) => {
+const TreatmentList = ({ treatments, onRefresh, isAdmin }) => {
   const [loading, setLoading] = useState(false);
   const [expandedTreatment, setExpandedTreatment] = useState(null);
   const { showNotification } = useNotification();
@@ -95,9 +95,23 @@ const TreatmentList = ({ treatments, onRefresh }) => {
                   <div>
                     <span className="font-medium">Species:</span> {treatment.species}
                   </div>
-                  <div>
-                    <span className="font-medium">Dosage:</span> {treatment.dosage}
-                  </div>
+
+                  {isAdmin ? (
+                      <div>
+                        {/* Safely access the new farmDetails field */}
+                        <span className="font-medium">Farm:</span> {treatment.farmDetails?.name || 'N/A'}
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="font-medium">Dosage:</span> {treatment.dosage}
+                      </div>
+                     )
+                  }
+                  {isAdmin  && (
+                    <div className="text-sm text-gray-600 mb-3">
+                      <span className="font-medium">Dosage:</span> {treatment.dosage}
+                    </div>
+                  )}
                 </div>
 
                 {expandedTreatment === treatment._id && (
