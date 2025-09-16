@@ -9,7 +9,7 @@ const Farm = require('../models/Farm');
 
 // Helper function to get user's accessible farm IDs
 const getUserFarmIds = async (userId, userRole) => {
-  if (userRole === 'admin') {
+  if (userRole === 'admin' || userRole === 'veterinarian') {
     // Admin can access all farms
     const allFarms = await Farm.find({}, '_id');
     return allFarms.map(farm => farm._id);

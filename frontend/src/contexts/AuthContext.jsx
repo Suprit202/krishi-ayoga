@@ -38,11 +38,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Convenience functions for common role checks
-  const isAdmin = () => hasRole('admin');
-  const isVeterinarian = () => hasRole('veterinarian');
-  const isAdminOrVeterinarian = () => hasRole(['admin', 'veterinarian']);
-  const isFarmer = () => hasRole('farmer');
-  const isUser = () => hasRole('user');
+  const isAdmin = hasRole('admin');
+  const isVeterinarian = hasRole('veterinarian');
+  const isAdminOrVeterinarian = hasRole(['admin', 'veterinarian']);
+  const isFarmer = hasRole('farmer');
+  const isUser = hasRole('user');
 
   const login = async (formData) => {
     try {

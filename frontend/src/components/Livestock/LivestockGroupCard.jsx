@@ -1,9 +1,11 @@
 // src/components/Livestock/LivestockGroupCard.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext'; // ADD THIS IMPORT
 
 const LivestockGroupCard = ({ group }) => {
   const navigate = useNavigate();
+  const { isAdmin, isVeterinarian } = useAuth(); // ADD THIS HOOK
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -57,6 +59,16 @@ const LivestockGroupCard = ({ group }) => {
           {group.status.replace('_', ' ')}
         </span>
       </div>
+
+      {/* ADD FARM INFORMATION FOR ADMIN/VETERINARIAN */}
+      {(isAdmin || isVeterinarian) && group.farmId && (
+        <div className="mb-3 p-2 bg-gray-50 rounded-lg">
+          <p className="text-xs text-gray-500">Farm</p>
+          <p className="text-sm font-medium text-gray-800">
+            {group.farmId.name}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-gray-50 p-3 rounded-lg">

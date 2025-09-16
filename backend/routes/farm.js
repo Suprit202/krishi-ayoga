@@ -150,4 +150,62 @@ router.get('/stats', protect, async (req, res) => {
   }
 });
 
+// routes/farm.js - UPDATED FOR BOTH ROLES
+// @desc    Update farm details (Admin and Veterinarian)
+// @route   PUT /api/farm/admin-profile
+// @access  Private (Admin and Veterinarian)
+router.put('/admin-profile', protect, async (req, res) => {
+  try {
+    // Check if user is admin or veterinarian
+    if (req.user.role !== 'admin' && req.user.role !== 'veterinarian') {
+      return res.status(403).json({ message: 'Admin or veterinarian access required' });
+    }
+
+    const { 
+      farmId, 
+      userId, 
+      name, type, location, size, establishedYear, registrationId, description,
+      contactInfo,
+      // Admin-only fields
+      registrationStatus, verificationStatus, complianceStatus, notes, userRole 
+    } = req.body;
+
+    // Update farm details (allowed for both admin and vet)
+    if (farmId) {
+      const farmUpdate = {
+        name, type, location, size, establishedYear, registrationId, description
+      };
+
+      // Add contact info if provided
+      if (contactInfo) {
+        farmUpdate.contactInfo = contactInfo;
+      }
+
+      // Only allow admin to update administrative fields
+      if (req.user.role === 'admin') {
+        if (registrationStatus) farmUpdate.registrationStatus = registrationStatus;
+        if (verificationStatus) farmUpdate.verificationStatus = verificationStatus;
+        if (complianceStatus) farmUpdate.complianceStatus = complianceStatus;
+        if (notes) farmUpdate.adminNotes = notes;
+      }
+
+      // Remove undefined fields
+      Object.keys(farmUpdate).forEach(key => {
+        if (farmUpdate[key] === undefined) delete farmUpdate[key];
+      });
+
+      await Farm.findByIdAndUpdate(farmId, farmUpdate, { new: true });
+    }
+
+    // Only allow admin to update user roles
+    if (req.user.role === 'admin' && userId && userRole) {
+      await User.findByIdAndUpdate(userId, { role: userRole });
+    }
+
+    res.json({ message: 'Farm details updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;

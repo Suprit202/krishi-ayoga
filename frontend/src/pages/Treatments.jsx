@@ -16,13 +16,13 @@ const Treatments = () => {
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [sortFilter, setSortFilter] = useState('all');
   const { showNotification } = useNotification();
-  const { isAdmin, isVeterinarian, user } = useAuth();
+  const { isAdmin, isVeterinarian, isFarmer } = useAuth();
   const [searchParams] = useSearchParams();
 
   // Determine user type for cleaner logic
   const isAdminOrVet = isAdmin || isVeterinarian;
-  const isRegularUser = !isAdmin && !isVeterinarian; // Farmers or other users
-
+  const isRegularUser = isFarmer; // Farmers or other users
+// console.log(isRegularUser);
   useEffect(() => {
     fetchTreatments();
     
