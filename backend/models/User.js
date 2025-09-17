@@ -76,7 +76,9 @@ const UserSchema = new mongoose.Schema({
       min: 0
     },
     qualifications: [String],
-    specialization: [String]
+    specialization: [String],
+    department: String,
+    position: String
   },
   isActive: {
     type: Boolean,

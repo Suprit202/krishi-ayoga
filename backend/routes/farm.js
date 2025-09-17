@@ -38,6 +38,10 @@ router.get('/profile', protect, async (req, res) => {
 // @desc    Update farm profile
 // @route   PUT /api/farm/profile
 // @access  Private
+// routes/farm.js - UPDATED to handle admin fields
+// @desc    Update farm profile
+// @route   PUT /api/farm/profile
+// @access  Private
 router.put('/profile', protect, async (req, res) => {
   try {
     const {
@@ -53,7 +57,9 @@ router.put('/profile', protect, async (req, res) => {
       address,
       experience,
       qualifications,
-      specialization
+      specialization,
+      department,    // Admin-specific field
+      position       // Admin-specific field
     } = req.body;
 
     const user = await User.findById(req.user.id);
@@ -62,13 +68,28 @@ router.put('/profile', protect, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update or create Farm document
-    let farm;
-    if (user.farmId) {
-      // Update existing farm
-      farm = await Farm.findByIdAndUpdate(
-        user.farmId,
-        {
+    // Update or create Farm document (only for farmers)
+    let farm = null;
+    if (user.role === 'farmer') {
+      if (user.farmId) {
+        // Update existing farm
+        farm = await Farm.findByIdAndUpdate(
+          user.farmId,
+          {
+            name,
+            type,
+            location,
+            contact,
+            size,
+            establishedYear,
+            registrationId,
+            description
+          },
+          { new: true, runValidators: true }
+        );
+      } else {
+        // Create new farm (only for farmers)
+        farm = await Farm.create({
           name,
           type,
           location,
@@ -76,32 +97,30 @@ router.put('/profile', protect, async (req, res) => {
           size,
           establishedYear,
           registrationId,
-          description
-        },
-        { new: true, runValidators: true }
-      );
-    } else {
-      // Create new farm
-      farm = await Farm.create({
-        name,
-        type,
-        location,
-        contact,
-        size,
-        establishedYear,
-        registrationId,
-        description,
-        owner: req.user.id
-      });
+          description,
+          owner: req.user.id
+        });
+      }
     }
 
-    // Update user profile
+    // Update user profile with common fields
     const updateData = {};
     if (phone) updateData['profile.phone'] = phone;
     if (address) updateData['profile.address'] = address;
     if (experience) updateData['profile.experience'] = experience;
     if (qualifications) updateData['profile.qualifications'] = qualifications;
     if (specialization) updateData['profile.specialization'] = specialization;
+    
+    // Add admin-specific fields if user is admin
+    if (user.role === 'admin') {
+      if (department) updateData['profile.department'] = department;
+      if (position) updateData['profile.position'] = position;
+    }
+
+    // Add veterinarian-specific fields if user is veterinarian
+    if (user.role === 'veterinarian') {
+      // You can add vet-specific fields here if needed
+    }
 
     if (Object.keys(updateData).length > 0) {
       await User.findByIdAndUpdate(req.user.id, updateData);
@@ -116,6 +135,7 @@ router.put('/profile', protect, async (req, res) => {
       farmer: {
         name: updatedUser.name,
         email: updatedUser.email,
+        role: updatedUser.role,
         profile: updatedUser.profile
       }
     });

@@ -1,13 +1,13 @@
-// src/pages/Farm.jsx
+// src/pages/Profile.jsx
 import React from 'react';
-import FarmManager from '../components/Farm/FarmManager';
+import ProfileManager from '../components/Farm/ProfileManager';
 
-const Farm = () => {
+const Profile = () => {
   return (
     <div className="container mx-auto px-4 py-6">
-      <FarmManager />
+      <ProfileManager />
     </div>
   );
 };
 
-export default Farm;
+export default Profile;

@@ -9,7 +9,7 @@ const { protect } = require('../middleware/auth');
 
 // Helper function to get user's accessible farm IDs
 const getUserFarmIds = async (userId, userRole) => {
-  if (userRole === 'admin') {
+  if (userRole === 'admin' || userRole === 'veterinarian') {
     const allFarms = await Farm.find({}, '_id');
     return allFarms.map(farm => farm._id);
   } else {
