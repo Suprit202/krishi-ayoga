@@ -97,7 +97,7 @@ const handleSubmit = async (e) => {
             Create Your Account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Join FarmGuard to manage your farm operations efficiently
+            Join KrishiAyoga to manage your farm operations efficiently
           </p>
         </div>
         

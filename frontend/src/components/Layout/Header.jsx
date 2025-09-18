@@ -15,7 +15,7 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="text-xl font-bold text-primary-600">
-              FarmGuard
+              KrishiAyoga
             </Link>
           </div>
 
