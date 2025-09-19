@@ -125,10 +125,10 @@ const LivestockGroupDetails = () => {
                 <div key={index} className="bg-yellow-100 p-4 rounded-lg">
                   <p className="font-semibold py-1 px-3 bg-blue-200 inline rounded-full">{treatment.drugName}</p>
                   <p className="text-sm px-4 py-4 text-green-700">
-                    Date Administered: {new Date(treatment.dateAdministered).toLocaleDateString()}
+                    Date Administered: {new Date(treatment.dateAdministered).toLocaleDateString('en-US',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:true})}
                   </p>
                   <p className="text-sm px-4 text-yellow-700">
-                    Until: {new Date(treatment.withdrawalEndDate).toLocaleDateString()}
+                    Until: {new Date(treatment.withdrawalEndDate).toLocaleDateString('en-US',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:true})}
                   </p>
                   {treatment.notes && (
                     <p className="text-sm text-yellow-600 mt-1">{treatment.notes}</p>

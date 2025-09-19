@@ -50,11 +50,11 @@ const LivestockGroupsOverview = ({ livestockGroups, loading }) => {
                   <span className="font-medium">Count:</span> {group.count} animals
                 </div>
                 <div>
-                  <span className="font-medium">Location:</span> {group.location || 'Not specified'}
+                  <span className="font-medium">Location:</span> {group.farmId.name || 'Not specified'}
                 </div>
-                <div>
+                {/* <div>
                   <span className="font-medium">Age:</span> {group.age || 'N/A'}
-                </div>
+                </div> */}
               </div>
               
               <div className="flex items-center justify-between text-xs text-gray-500">

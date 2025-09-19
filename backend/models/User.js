@@ -33,10 +33,10 @@ const UserSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Farm'
   },
-  ownedFarms: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Farm'
-  }],
+  authorized: {
+    type: String,
+    enum: ['authorized','unauthorized']
+  },
   farm: {
     name: {
       type: String,

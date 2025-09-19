@@ -90,7 +90,7 @@ const LivestockGroupCard = ({ group }) => {
             {group.currentTreatments.map((treatment, index) => (
               <div key={index} className="bg-yellow-50 p-2 rounded-lg">
                 <p className="text-sm text-yellow-800">
-                  <span className="font-medium">{treatment.drugName}</span> - until {new Date(treatment.withdrawalEndDate).toLocaleDateString()}
+                  <span className="font-medium">{treatment.drugName}</span> - until {new Date(treatment.withdrawalEndDate).toLocaleDateString('en-US',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:true})}
                 </p>
               </div>
             ))}
