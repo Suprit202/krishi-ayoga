@@ -18,10 +18,13 @@ const ReportCard = ({ report, onAddMessage, onUpdateStatus, currentUser }) => {
   const [isSending, setIsSending] = useState(false);
 
   // Safe access to nested properties with fallbacks
-  const farmerName = report.farmerId?.name || 'Farm Owner';
+  const farmerName = report.farmerId?.name || report.farmId?.owner?.name || 'Farm Owner';
   const veterinarianName = report.veterinarianId?.name || 'Veterinarian';
   const livestockName = report.livestockGroupId?.name || 'Unknown Livestock';
   const livestockSpecies = report.livestockGroupId?.species || '';
+  const treatment = report.treatmentId?.drugName || 'No treatment specified';
+  const farmName = report.farmId?.name || 'Unknown Farm';
+  const farmOwnerName = report.farmId?.owner?.name || 'Unknown Owner';
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -31,6 +34,8 @@ const ReportCard = ({ report, onAddMessage, onUpdateStatus, currentUser }) => {
     
     if (result.success) {
       setNewMessage('');
+    } else {
+      console.error('Failed to send message:', result.error);
     }
     
     setIsSending(false);
@@ -48,15 +53,17 @@ const ReportCard = ({ report, onAddMessage, onUpdateStatus, currentUser }) => {
     currentUser.role === 'admin' ||
     // Farmer who owns the report (if farmerId exists)
     (report.farmerId && currentUser._id === report.farmerId._id?.toString()) ||
-    // Farmer who owns the livestock group (even if report has no farmerId)
-    (currentUser.role === 'farmer' && !report.farmerId)
+    // Farmer who owns the farm (if farmId exists)
+    (report.farmId?.owner && currentUser._id === report.farmId.owner._id?.toString()) ||
+    // Any farmer (broad access)
+    currentUser.role === 'farmer'
   );
 
   // Check if user can update status
   const canUpdateStatus = currentUser?._id && (
     currentUser._id === report.veterinarianId?._id?.toString() ||
-    currentUser.role === 'admin' ||
-    (report.farmerId && currentUser._id === report.farmerId._id?.toString())
+    currentUser.role === 'veterinarian' ||
+    currentUser.role === 'admin'
   );
 
   const unreadMessages = report.messages?.filter(
@@ -96,12 +103,22 @@ const ReportCard = ({ report, onAddMessage, onUpdateStatus, currentUser }) => {
             <p className="text-sm text-gray-600 mb-2">
               Livestock: {livestockName} {livestockSpecies && `(${livestockSpecies})`}
             </p>
+
+            <p className="text-sm text-gray-600 mb-2">
+              Treatment: {treatment} {report.treatmentId?.dateAdministered && 
+                `on ${format(new Date(report.treatmentId.dateAdministered), 'MMM d, yyyy')}`
+              }
+            </p>
+
+            <p className="text-sm text-gray-600 mb-2">
+              Farm: {farmName}
+            </p>
             
             <div className="flex items-center text-sm text-gray-500">
               <User className="h-4 w-4 mr-1" />
               <span>
-                {veterinarianName} → {farmerName}
-                {!report.farmerId && ' (General Report)'}
+                {veterinarianName} → {farmOwnerName}
+                {!report.farmerId && !report.farmId?.owner && ' (General Report)'}
               </span>
               <Clock className="h-4 w-4 ml-3 mr-1" />
               <span>{report.createdAt ? format(new Date(report.createdAt), 'MMM d, yyyy') : 'Unknown date'}</span>
@@ -149,7 +166,7 @@ const ReportCard = ({ report, onAddMessage, onUpdateStatus, currentUser }) => {
                           ? 'text-primary-100'
                           : 'text-gray-500'
                       }`}>
-                        {message.createdAt ? format(new Date(message.createdAt), 'MMM d, h:mm a') : 'Unknown date'}
+                        {message.senderRole} • {message.createdAt ? format(new Date(message.createdAt), 'MMM d, h:mm a') : 'Unknown date'}
                       </p>
                     </div>
                   </div>
@@ -159,7 +176,7 @@ const ReportCard = ({ report, onAddMessage, onUpdateStatus, currentUser }) => {
           </div>
           
           {/* Reply section */}
-          {canReply && report.status !== 'closed' && (
+          {canReply && report.status == 'open' && (
             <div className="border-t border-gray-200 p-4">
               <div className="flex gap-2">
                 <input

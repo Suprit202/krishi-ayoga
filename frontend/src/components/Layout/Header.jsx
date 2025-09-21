@@ -14,7 +14,8 @@ const Header = () => {
           
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="text-xl font-bold text-primary-600">
+            <Link to="/" className="flex items-center justify-between text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-green-600 to-blue-800">
+              <img src=".\favicon.png" width='40' height='40' />
               KrishiAyoga
             </Link>
           </div>

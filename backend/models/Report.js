@@ -44,6 +44,11 @@ const ReportSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  farmId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Farm',
+    required: true
+  },
   farmerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

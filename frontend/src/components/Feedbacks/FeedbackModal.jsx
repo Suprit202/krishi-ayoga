@@ -7,6 +7,7 @@ import api from '../../services/api';
 const FeedbackModal = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     title: '',
+    farmId:'',
     livestockGroupId: '',
     treatmentId: '',
     priority: 'medium',
@@ -99,6 +100,7 @@ const FeedbackModal = ({ isOpen, onClose, onSubmit }) => {
     // Prepare the data for submission - NO farmerId
     const submissionData = {
       title: formData.title,
+      farmId:formData.farmId,
       livestockGroupId: formData.livestockGroupId,
       treatmentId: formData.treatmentId,
       priority: formData.priority,
@@ -110,7 +112,7 @@ const FeedbackModal = ({ isOpen, onClose, onSubmit }) => {
       }]
     };
     
-    console.log('Submitting data to API:', submissionData);
+    // console.log('Submitting data to API:', submissionData);
     onSubmit(submissionData);
   };
   
@@ -125,8 +127,10 @@ const FeedbackModal = ({ isOpen, onClose, onSubmit }) => {
 
   const handleFarmChange = (e) => {
     setSelectedFarmId(e.target.value);
+    const farmId = e.target.value;
     setFormData(prev => ({
       ...prev,
+      farmId,
       livestockGroupId: '',
       treatmentId: ''
     }));
@@ -168,12 +172,12 @@ const FeedbackModal = ({ isOpen, onClose, onSubmit }) => {
                 Select Farm *
               </label>
               <select
-                value={selectedFarmId}
+                value={formData.selectedFarmId}
                 onChange={handleFarmChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 required
               >
-                <option value="">Select a farm</option>
+                <option value=''>Select a farm</option>
                 {farms.map(farm => (
                   <option key={farm._id} value={farm._id}>
                     {farm.name} - {renderLocation(farm.location)}
