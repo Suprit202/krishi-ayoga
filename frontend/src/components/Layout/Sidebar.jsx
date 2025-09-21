@@ -7,7 +7,8 @@ import {
   BarChart3,
   LogOut,
   Users,
-  Building2
+  Building2,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -20,6 +21,7 @@ const Sidebar = () => {
     { name: 'Treatments', href: '/treatments', icon: PlusCircle },
     { name: 'Livestock', href: '/livestock', icon: Users },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
+    { name: 'Feedback', href: '/feedback', icon: MessageSquare },
     { name: 'Farms', href: '/farms', icon: Building2 },
   ];
 

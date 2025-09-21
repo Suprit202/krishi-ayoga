@@ -13,6 +13,7 @@ import Treatments from './pages/Treatments';
 import Livestock from './pages/Livestock';
 import Farms from './pages/Farm';
 import Reports from './pages/Reports';
+import Feedback from './pages/Feedback';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -78,6 +79,7 @@ function AppRoutes() {
         <Route path="livestock" element={<Livestock />} />
         <Route path="farms" element={<Farms />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="feedback" element={<Feedback />} />
         <Route path="livestock/:id" element={<LivestockGroupDetails />} />
       </Route>
       

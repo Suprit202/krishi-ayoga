@@ -29,6 +29,7 @@ app.use('/api/drugs', require('./routes/drugsRouts.js'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/alerts', require('./routes/alerts.js'));
 app.use('/api/farm', require('./routes/farm.js'));
+app.use('/api/feedback', require('./routes/feedback.js'));
 app.use(/\/api\/.*/, (req, res) => {
   res.status(404).json({ 
     message: 'API endpoint not found',

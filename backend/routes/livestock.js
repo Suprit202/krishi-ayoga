@@ -210,4 +210,33 @@ router.get('/farm/:farmId', protect, async (req, res) => {
   }
 });
 
+// Add this to your existing livestock routes file
+// @desc    Get livestock groups by farm ID for dropdown selection
+// @route   GET /api/livestock/farm-dropdown/:farmId
+// @access  Private
+router.get('/farm-dropdown/:farmId', protect, async (req, res) => {
+  try {
+    const { farmId } = req.params;
+    
+    // Check authorization
+    if (req.user.role !== 'admin' && req.user.role !== 'veterinarian') {
+      // For farmers, they can only access their own farm
+      const userFarms = await getUserFarmIds(req.user._id, req.user.role);
+      const userFarmIds = userFarms.map(farm => farm._id.toString());
+      
+      if (!userFarmIds.includes(farmId)) {
+        return res.status(403).json({ message: 'Not authorized to access this farm' });
+      }
+    }
+
+    const groups = await LivestockGroup.find({ farmId })
+      .select('name species count status') // Only return essential fields for dropdown
+      .sort({ name: 1 });
+
+    res.json(groups);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;
