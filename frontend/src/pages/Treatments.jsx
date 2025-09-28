@@ -94,7 +94,7 @@ const Treatments = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Disease Treatments</h1>
-          <p className="text-gray-600">AI-powered livestock disease diagnosis and treatment</p>
+          <p className="text-gray-600">Livestock disease diagnosis and treatment</p>
         </div>
         <div className="flex items-center space-x-4">
           {/* Filter dropdown - only show for admin/vet */}

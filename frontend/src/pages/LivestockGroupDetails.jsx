@@ -118,7 +118,7 @@ const LivestockGroupDetails = () => {
 
         {/* Treatments Card */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Current Treatments</h2>
+          <h2 className="text-xl font-semibold mb-4">Treatment History</h2>
           {group.currentTreatments && group.currentTreatments.length > 0 ? (
             <div className="space-y-3">
               {group.currentTreatments.map((treatment, index) => (
