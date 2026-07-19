@@ -16,7 +16,7 @@ const app = express();
 // app.use(cors());
 const allowedOrigins = [
   'https://krishi-ayoga.onrender.com',
-  'https://krishi-ayoga.vercel.app/'
+  'https://krishi-ayoga.vercel.app'
 ];
 
 app.use(cors({
