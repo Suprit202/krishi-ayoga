@@ -1,7 +1,7 @@
 // src/services/api.js
 import axios from 'axios';
 
-const API_BASE_URL = 'https://krishi-ayoga.onrender.com/api';
+const API_BASE_URL = 'https://krishi-ayoga.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
