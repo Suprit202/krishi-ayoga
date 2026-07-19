@@ -15,7 +15,8 @@ const app = express();
 // Middleware
 // app.use(cors());
 const allowedOrigins = [
-  'https://krishi-ayoga.onrender.com'
+  'https://krishi-ayoga.onrender.com',
+  'https://krishi-ayoga.vercel.app/'
 ];
 
 app.use(cors({
@@ -32,6 +33,7 @@ app.use(cors({
   },
   credentials: true 
 }));
+
 app.use(express.json());
 
 // ✅ FIXED: Use single quotes instead of backticks
